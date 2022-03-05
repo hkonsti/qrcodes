@@ -2,27 +2,43 @@ import React from "react";
 import "./App.css";
 import {QrScanner} from "./QrScanner";
 import {Camera} from "./Camera";
+import {OpenCV} from "./opencv/OpenCV";
 
-export default class App extends React.Component<{}, {}> {
+enum Runner {
+	RUNNING,
+	STOPPING,
+	STOPPED,
+}
 
+interface AppState {
 	scanner: QrScanner;
 	camera: Camera;
+}
+
+export default class App extends React.Component<{}, AppState> {
 
 	constructor(props: any) {
 		super(props);
 
-		this.scanner = new QrScanner();
-		this.camera = new Camera();
+		this.state = {
+			scanner: new QrScanner(),
+			camera: new Camera(),
+		};
 	}
 
 	async componentDidMount() {
 		const videoElement = document.getElementById("webcam") as HTMLVideoElement;
-		await this.camera.setUpStream(videoElement);
+		await this.state.camera.setUpStream(videoElement);
 
-		this.setUpRunner();
+		const canvasElement = document.getElementById("canvas") as HTMLCanvasElement;
+		if (!this.state.scanner.isInitialized) {
+			await this.state.scanner.initialize(videoElement);
+		}
+
+		this.startRunner();
 	}
 
-	async setUpRunner() {
+	async startRunner() {
 		while (true) {
 			await this.takePhoto();
 			await this.sleep(10);
@@ -37,22 +53,15 @@ export default class App extends React.Component<{}, {}> {
 
 	async takePhoto() {
 		const canvasElement = document.getElementById("canvas") as HTMLCanvasElement;
-		const videoElement = document.getElementById("webcam") as HTMLVideoElement;
-
-		this.camera.drawImageOnCanvas(canvasElement, videoElement);
-
-		await this.scanner.scan(canvasElement);
+		await this.state.scanner.findFIPs(canvasElement);
 	}
 
 	render() {
 		return (
 			<div className="App">
-				<video id="webcam" autoPlay={true} playsInline={true} width={640} height={480}></video>
+				<video id="webcam" autoPlay={true} playsInline={true} width={640} height={480} style={{display: "none"}}></video>
 				<canvas id="canvas" className="d-none"></canvas>
-				<button onClick={this.takePhoto}>
-					Take photo
-				</button>
-				<input type="file" id="fileInput" />
+				<button onClick={this.takePhoto.bind(this)}>Heyy</button>
 			</div>
 		);
 	}

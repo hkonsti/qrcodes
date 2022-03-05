@@ -1,22 +1,17 @@
 import {OpenCV} from "./opencv/OpenCV";
 
-interface Coordinate {
-	x: number;
-	y: number;
-}
-
-interface Rectangle {
-	upperLeft: Coordinate;
-	lowerRight: Coordinate;
-}
-
 export class QrScanner {
 
-	isCVInitialized: boolean = false;
+	static readonly PATH: string = "CASCADE_FILE";
+	static readonly FILE: string = "./cv/cascade_selftrained_8.xml";
 
-	isFileInitialized: boolean = false;
-	path: string = "CASCADE_FILE";
+	isInitialized: boolean = false;
 
+	src: any;
+	dst: any;
+	gray: any;
+	cap: any;
+	fips: any;
 	classifier: any;
 
 	private async waitForFile(path: string, url: string): Promise<void> {
@@ -28,53 +23,54 @@ export class QrScanner {
 		});
 	}
 
-	public async scan(image: HTMLCanvasElement): Promise<void> {
-		await this.findFIPs(image)
-	}
-
-	private async findFIPs(image: HTMLCanvasElement): Promise<any> {
-		if (!this.isCVInitialized) {
+	public async initialize(video: HTMLVideoElement): Promise<void> {
+		if (!OpenCV.isOpenCVLoaded()) {
 			await OpenCV.loadOpenCV();
-			this.isCVInitialized = true;
+			await this.waitForFile(QrScanner.PATH, QrScanner.FILE);
+		} else {
+			console.log("OpenCV is already loaded, skipping.");
 		}
 
-		if (!this.isFileInitialized) {
-			let file = "./cv/cascade_selftrained_8.xml";
-			await this.waitForFile(this.path, file);
-			this.isFileInitialized = true;
-		}
+		this.classifier = new cv.CascadeClassifier();
+		this.classifier.load(QrScanner.PATH);
 
-		if (!this.classifier) {
-			this.classifier = new cv.CascadeClassifier();
-			this.classifier.load(this.path);
-		}
+		this.src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+		this.dst = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+		this.gray = new cv.Mat();
+		this.cap = new cv.VideoCapture(video);
+		this.fips = new cv.RectVector();
 
-		let img = cv.imread(image);
-
-		// Convert to grayscale
-		let gray = new cv.Mat();
-		cv.cvtColor(img, gray, cv.COLOR_RGBA2GRAY);
-
-		let fips = new cv.RectVector();
-		let msize = new cv.Size(0, 0);
-		this.classifier.detectMultiScale(gray, fips, 1.1, 3, 0, msize, msize);
-
-		console.log(fips.size());
-
-		for (let i = 0; i < fips.size(); ++i) {
-			let p = fips.get(i);
-
-			let p1 = new cv.Point(p.x, p.y);
-			let p2 = new cv.Point(p.x + p.width, p.y + p.height);
-
-			cv.rectangle(img, p1, p2, [255, 0, 0, 255]);
-		}
-
-		cv.imshow(image, img)
-
-		img.delete();
-		gray.delete();
-		fips.delete();
+		this.isInitialized = true;
 	}
 
+	public async uninitialize() {
+		this.classifier.delete();
+		this.src.delete();
+		this.dst.delete();
+		this.gray.delete();
+		this.cap.delete();
+		this.fips.delete();
+		OpenCV.unloadOpenCV();
+		this.isInitialized = false;
+	}
+
+	public async findFIPs(output: HTMLCanvasElement): Promise<void> {
+		if (!this.isInitialized) {
+			throw new Error("QrScanner needs to be initialized first.");
+		}
+
+		this.cap.read(this.src);
+		this.src.copyTo(this.dst);
+		cv.cvtColor(this.dst, this.gray, cv.COLOR_RGBA2GRAY, 0);
+		this.classifier.detectMultiScale(this.gray, this.fips, 1.1, 3, 0);
+
+		for (let i = 0; i < this.fips.size(); ++i) {
+			let fip = this.fips.get(i);
+			let p1 = new cv.Point(fip.x, fip.y);
+			let p2 = new cv.Point(fip.x + fip.width, fip.y + fip.height);
+			cv.rectangle(this.dst, p1, p2, [255, 0, 0, 255]);
+		}
+
+		cv.imshow(output, this.dst);
+	}
 }
