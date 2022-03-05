@@ -1,59 +1,50 @@
 import React from "react";
 import "./App.css";
-import {QrScanner} from "./QrScanner";
 import {Camera} from "./Camera";
-import {OpenCV} from "./opencv/OpenCV";
 
-enum Runner {
+import Runner from "./Runner";
+
+export enum RunnerState {
 	RUNNING,
 	STOPPING,
-	STOPPED,
 }
 
 interface AppState {
-	scanner: QrScanner;
 	camera: Camera;
+	runners: {[x: string]: RunnerState};
 }
 
 export default class App extends React.Component<{}, AppState> {
-
 	constructor(props: any) {
 		super(props);
 
 		this.state = {
-			scanner: new QrScanner(),
 			camera: new Camera(),
+			runners: {},
 		};
 	}
 
 	async componentDidMount() {
 		const videoElement = document.getElementById("webcam") as HTMLVideoElement;
 		await this.state.camera.setUpStream(videoElement);
-
-		const canvasElement = document.getElementById("canvas") as HTMLCanvasElement;
-		if (!this.state.scanner.isInitialized) {
-			await this.state.scanner.initialize(videoElement);
-		}
-
-		this.startRunner();
 	}
 
-	async startRunner() {
-		while (true) {
-			await this.takePhoto();
-			await this.sleep(10);
-		}
-	}
-
-	async sleep(ms: number) {
-		return new Promise((res, rej) => {
-			setTimeout(res, ms);
+	registerRunner(id: string) {
+		const runners = Object.keys(this.state.runners);
+		runners.forEach(runner => {
+			this.state.runners[runner] = RunnerState.STOPPING;
 		});
+
+		this.state.runners[id] = RunnerState.RUNNING;
 	}
 
-	async takePhoto() {
-		const canvasElement = document.getElementById("canvas") as HTMLCanvasElement;
-		await this.state.scanner.findFIPs(canvasElement);
+	unregisterRunner(id: string) {
+		delete this.state.runners[id];
+		console.log(`Runner ${id} unregistered.`);
+	}
+
+	getRunnerState(id: string): RunnerState | undefined {
+		return this.state.runners[id];
 	}
 
 	render() {
@@ -61,7 +52,11 @@ export default class App extends React.Component<{}, AppState> {
 			<div className="App">
 				<video id="webcam" autoPlay={true} playsInline={true} width={640} height={480} style={{display: "none"}}></video>
 				<canvas id="canvas" className="d-none"></canvas>
-				<button onClick={this.takePhoto.bind(this)}>Heyy</button>
+				<Runner
+					registerRunner={this.registerRunner.bind(this)}
+					unregisterRunner={this.unregisterRunner.bind(this)}
+					getRunnerState={this.getRunnerState.bind(this)}>
+				</Runner>
 			</div>
 		);
 	}

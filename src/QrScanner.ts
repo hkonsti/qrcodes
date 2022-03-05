@@ -48,9 +48,7 @@ export class QrScanner {
 		this.src.delete();
 		this.dst.delete();
 		this.gray.delete();
-		this.cap.delete();
 		this.fips.delete();
-		OpenCV.unloadOpenCV();
 		this.isInitialized = false;
 	}
 
