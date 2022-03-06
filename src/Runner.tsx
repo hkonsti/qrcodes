@@ -1,7 +1,7 @@
 import React from "react";
 
 import {RunnerState} from "./App";
-import {QrScanner} from "./QrScanner";
+import {QrScanner} from "./scanner/QrScanner";
 
 interface Props {
     registerRunner: (id: string) => void;
