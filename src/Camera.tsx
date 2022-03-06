@@ -70,4 +70,9 @@ export class Camera {
 		context!.clearRect(0, 0, canvasElement.width, canvasElement.height);
 		context!.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 	}
+
+	public freezeImage(videoElement: HTMLVideoElement) {
+		videoElement.pause();
+		this.stream?.getVideoTracks()[0].stop();
+	}
 }

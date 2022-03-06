@@ -29,6 +29,16 @@ export default class App extends React.Component<{}, AppState> {
 		await this.state.camera.setUpStream(videoElement);
 	}
 
+	stopStream() {
+		const videoElement = document.getElementById("webcam") as HTMLVideoElement;
+		this.state.camera.freezeImage(videoElement);
+	}
+
+	async resumeStream() {
+		const videoElement = document.getElementById("webcam") as HTMLVideoElement;
+		await this.state.camera.setUpStream(videoElement);
+	}
+
 	registerRunner(id: string) {
 		const runners = Object.keys(this.state.runners);
 		runners.forEach(runner => {
@@ -57,6 +67,8 @@ export default class App extends React.Component<{}, AppState> {
 					unregisterRunner={this.unregisterRunner.bind(this)}
 					getRunnerState={this.getRunnerState.bind(this)}>
 				</Runner>
+				<button onClick={this.stopStream.bind(this)}>STOP</button>
+				<button onClick={this.resumeStream.bind(this)}>RESUME</button>
 			</div>
 		);
 	}
