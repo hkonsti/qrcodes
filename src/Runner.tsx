@@ -16,14 +16,14 @@ interface State {
 /**
  * This component is a wrapper around the QrScanner class. It renders a div and is therefore
  * part of React's component tree and subject to hot reloading. When something is changed in this
- * file or in QrScanner.ts, this component is destroyed by React and replaced with the new version.
+ * or any other file required by this component, this component is automatically replaced with the new version.
  * 
  * The `startRunner` function is an asynchronous loop that is detached and runs in the background. 
  * It is therefore not controlled by React. This means that orphaned infinite loops will still render 
  * to the canvas even if their "parent" components have long been replaced.
  * 
- * As a solution, old. outdated Runner instances are now tracked in the parent component, (App.tsx). 
- * When a Runner is replaced, the new instance notifies App.tsx if it's existance which then stops 
+ * As a solution, old, outdated Runner instances are now tracked in the parent component, (App.tsx). 
+ * When a Runner is replaced, the new instance notifies App.tsx if it's existence which then stops 
  * the old loop.
  */
 export default class Runner extends React.Component<Props, State>{
