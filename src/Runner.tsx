@@ -87,7 +87,7 @@ export default class Runner extends React.Component<Props, State>{
 
     async takePhoto() {
         const canvasElement = document.getElementById("canvas") as HTMLCanvasElement;
-        await this.scanner.findFIPs(canvasElement);
+        this.scanner.scan(canvasElement);
     }
 
     render() {

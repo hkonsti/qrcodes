@@ -1,5 +1,4 @@
 import React from "react";
-import "./App.css";
 import {Camera} from "./Camera";
 
 import Runner from "./Runner";

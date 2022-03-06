@@ -1,5 +1,5 @@
 import {OpenCV} from "../opencv/OpenCV";
-import {Aggregator} from "./Aggregator";
+import {Aggregator, Edge, QrCode} from "./Aggregator";
 
 import {Geometry, Rectangle} from "./Geometry";
 
@@ -58,13 +58,27 @@ export class QrScanner {
 		this.isInitialized = false;
 	}
 
-	public async findFIPs(output: HTMLCanvasElement): Promise<void> {
+	public scan(output: HTMLCanvasElement) {
 		if (!this.isInitialized) {
 			throw new Error("QrScanner needs to be initialized first.");
 		}
 
 		this.cap.read(this.src);
 		this.src.copyTo(this.dst);
+
+		const fips = this.findFIPs();
+		const edges = this.aggregator.findEdges(fips);
+		this.drawSearchPositions(edges);
+
+		const qrCode = this.aggregator.checkPositioning(edges);
+		if (qrCode) {
+			this.drawQrCodeEdges(qrCode);
+		}
+
+		cv.imshow(output, this.dst);
+	}
+
+	private findFIPs(): Rectangle[] {
 		cv.cvtColor(this.dst, this.gray, cv.COLOR_RGBA2GRAY, 0);
 		this.classifier.detectMultiScale(this.gray, this.fips, 1.1, 3, 0);
 
@@ -86,7 +100,10 @@ export class QrScanner {
 			cv.rectangle(this.dst, p1, p2, [255, 0, 0, 255]);
 		}
 
-		const edges = this.aggregator.findEdges(rectangles);
+		return rectangles;
+	}
+
+	private drawSearchPositions(edges: Edge[]) {
 		for (const edge of edges) {
 			const positions = this.aggregator.getPossiblePositions(this.geometry.findMiddleOfRectangle(edge[0]), this.geometry.findMiddleOfRectangle(edge[1]));
 			for (const position of positions) {
@@ -97,21 +114,18 @@ export class QrScanner {
 				cv.rectangle(this.dst, p1, p2, [255, 255, 0, 255]);
 			}
 		}
+	}
 
-		const qrCode = this.aggregator.checkPositioning(edges);
-		if (qrCode) {
-			const middle1 = this.geometry.findMiddleOfRectangle(qrCode[0]);
-			const middle2 = this.geometry.findMiddleOfRectangle(qrCode[1]);
-			const middle3 = this.geometry.findMiddleOfRectangle(qrCode[2]);
+	private drawQrCodeEdges(qrCode: QrCode) {
+		const middle1 = this.geometry.findMiddleOfRectangle(qrCode[0]);
+		const middle2 = this.geometry.findMiddleOfRectangle(qrCode[1]);
+		const middle3 = this.geometry.findMiddleOfRectangle(qrCode[2]);
 
-			const p1 = new cv.Point(middle1.x, middle1.y);
-			const p2 = new cv.Point(middle2.x, middle2.y);
-			const p3 = new cv.Point(middle3.x, middle3.y);
-			cv.line(this.dst, p1, p2, [0,255,0,255], 5);
-			cv.line(this.dst, p2, p3, [0,255,0,255], 5);
-			cv.line(this.dst, p3, p1, [0,255,0,255], 5);
-		}
-
-		cv.imshow(output, this.dst);
+		const p1 = new cv.Point(middle1.x, middle1.y);
+		const p2 = new cv.Point(middle2.x, middle2.y);
+		const p3 = new cv.Point(middle3.x, middle3.y);
+		cv.line(this.dst, p1, p2, [0,255,0,255], 5);
+		cv.line(this.dst, p2, p3, [0,255,0,255], 5);
+		cv.line(this.dst, p3, p1, [0,255,0,255], 5);
 	}
 }

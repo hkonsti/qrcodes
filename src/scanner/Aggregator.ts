@@ -1,7 +1,7 @@
 import {Rectangle, Geometry, Point} from "./Geometry";
 
-type QrCode = [Rectangle, Rectangle, Rectangle];
-type Edge = [Rectangle, Rectangle];
+export type QrCode = [Rectangle, Rectangle, Rectangle];
+export type Edge = [Rectangle, Rectangle];
 
 /**
  * The Aggregator class is used to chose which finding patterns belong to a QR code.
@@ -11,7 +11,7 @@ export class Aggregator {
 	static readonly DISTANCE_THRESHOLD = 100;
 	static readonly SIZE_DIFFERENCE_THRESHOLD = 0.5 // percent deviation from smaller one
 
-	static readonly LOCATION_TOLERANCE = 50;
+	static readonly LOCATION_TOLERANCE = 80;
 
 	geometry = new Geometry();
 
