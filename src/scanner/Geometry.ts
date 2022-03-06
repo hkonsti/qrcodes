@@ -67,20 +67,6 @@ export class Geometry {
 		return rectangle.height * rectangle.width;
 	}
 
-	public getCornerPoints(qrCode: QrCode) {
-		const corners: Rectangle[] = qrCode;
-		let topLeft = qrCode[0];
-		let topLeftIndex = 0;
-		for (let i = 1; i < 3; i++) {
-			if (topLeft.point.x + topLeft.point.y < corners[i].point.x + corners[i].point.x) {
-				topLeft = qrCode[i];
-				topLeftIndex = i;
-			}
-		}
-
-		corners.splice(topLeftIndex, 1);
-	}
-
 	/**
 	 * Returns Vector from P1 to P2
 	 */
